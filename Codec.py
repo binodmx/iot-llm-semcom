@@ -2,6 +2,7 @@ from langgraph.graph import StateGraph, MessagesState, START, END
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_anthropic import ChatAnthropic
+from langchain_ollama import ChatOllama
 import dotenv
 import os
 
@@ -15,6 +16,8 @@ def get_llm(model_name):
         return ChatGoogleGenerativeAI(model=model_name, temperature=0.1)
     elif model_name.startswith("claude"):
         return ChatAnthropic(model=model_name, temperature=0.1)
+    elif model_name.startswith("gemma"):
+        return ChatOllama(model=model_name, temperature=0.1)
     else:
         raise ValueError(f"Unsupported model name: {model_name}")
 

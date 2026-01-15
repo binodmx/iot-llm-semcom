@@ -2,6 +2,7 @@ accelerate
 anytree
 bitsandbytes
 datasets
+gradio
 ipywidgets
 jupyterlab
 langchain

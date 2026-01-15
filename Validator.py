@@ -3,6 +3,7 @@ from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_anthropic import ChatAnthropic
 from langgraph.prebuilt import tools_condition, ToolNode
+from langchain_ollama import ChatOllama
 import dotenv
 import os
 
@@ -16,6 +17,8 @@ def get_llm(model_name):
         return ChatGoogleGenerativeAI(model=model_name, temperature=0.1)
     elif model_name.startswith("claude"):
         return ChatAnthropic(model=model_name, temperature=0.1)
+    elif model_name.startswith("gemma") or model_name.startswith("functiongemma"):
+        return ChatOllama(model=model_name, temperature=0.1)
     else:
         raise ValueError(f"Unsupported model name: {model_name}")
 
@@ -25,9 +28,9 @@ class Validator:
         tools = [validator_func]
         llm = get_llm(model_name)
         llm_with_tools = llm.bind_tools(tools, parallel_tool_calls=False)
+        # llm_with_tools = llm.bind_tools(tools)
         builder = StateGraph(MessagesState)
-        builder.add_node(f"{name}",
-                         lambda state: {"messages": state["messages"] + [llm_with_tools.invoke(state["messages"])]})
+        builder.add_node(f"{name}", lambda state: {"messages": state["messages"] + [llm_with_tools.invoke(state["messages"])]})
         builder.add_node("tools", ToolNode(tools))
         builder.add_edge(START, f"{name}")
         builder.add_conditional_edges(f"{name}", tools_condition)
