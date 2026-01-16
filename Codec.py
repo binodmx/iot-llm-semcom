@@ -16,7 +16,7 @@ def get_llm(model_name):
         return ChatGoogleGenerativeAI(model=model_name, temperature=0.1)
     elif model_name.startswith("claude"):
         return ChatAnthropic(model=model_name, temperature=0.1)
-    elif model_name.startswith("gemma"):
+    elif "gemma" in model_name or "llama" in model_name:
         return ChatOllama(model=model_name, temperature=0.1)
     else:
         raise ValueError(f"Unsupported model name: {model_name}")
@@ -31,8 +31,8 @@ class Codec:
         builder.add_edge(f"{name}", END)
         self.graph = builder.compile()
 
-    def invoke(self, state):
-        return self.graph.invoke(state)
+    def invoke(self, state, tags=[]):
+        return self.graph.invoke(state, config={"tags": tags})
 
     def get_graph(self):
         return self.graph.get_graph()
