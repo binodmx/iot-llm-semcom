@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import time
 import numpy as np
 
+
 df = None
 resampled_df = None
 X_train = None
@@ -82,6 +83,7 @@ You are a highly skilled AI model specialized in decision tree error handling.
 validator_human_msg = """
 Validate the following decision tree text.
 """
+
 
 def generate_decision_tree_models():
     global X_train
@@ -200,7 +202,7 @@ def update_dataset():
         for column in categorical_columns:
             df[column] = label_encoder.fit_transform(df[column].astype(str))
         df['label'] = df['attack'].apply(lambda x: "Attack" if x != 0 else "Benign")
-        df = df.drop(columns=['attack', 'category'])
+        df = df.drop(columns=['attack', 'category', 'subcategory', 'pkSeqID'])
     resampled_df = resample_dataset(df)
     X = resampled_df.drop(columns='label')
     y = resampled_df['label']
@@ -256,6 +258,7 @@ def encode(progress=gr.Progress()):
     with open(os.getcwd() + f'/encoded-texts/{dataset_name}_{dataset_type}_{llm_name}_{n_models}_etts_4.pkl', 'wb') as f:
         pickle.dump(encoded_ai_messages, f)
     gr.Info("Decision trees encoded successfully!")
+    return "Encoding Completed!"
 
 
 def decode(progress=gr.Progress()):
@@ -289,6 +292,7 @@ def decode(progress=gr.Progress()):
     with open(os.getcwd() + f'/decoded-texts/{dataset_name}_{dataset_type}_{llm_name}_{n_models}_dtts_3.pkl', 'wb') as f:
         pickle.dump(decoded_ai_messages, f)
     gr.Info("Decision trees decoded successfully!")
+    return "Decoding Completed!"
 
 
 def validate(progress=gr.Progress()):
@@ -358,6 +362,7 @@ def validate(progress=gr.Progress()):
     with open(os.getcwd() + f'/validated-texts/{dataset_name}_{dataset_type}_{llm_name}_{n_models}_vtts_3.pkl', 'wb') as f:
         pickle.dump(validated_ai_messages, f)
     gr.Info("Decision trees validated successfully!")
+    return "Validation Completed!"
 
 
 def evaluate(progress=gr.Progress()):
@@ -462,24 +467,27 @@ def evaluate(progress=gr.Progress()):
 
     with open(os.getcwd() + f'/confusion-matrices/{dn}_{dataset_type}_{ln}_{n_models}_cm_3_improved.pkl', 'wb') as f:
         pickle.dump(cms_3_improved, f)
-    
-    return "Evaluation Complete"
+    gr.Info("Decision trees evaluated successfully!")
+    return "Evaluation Completed!"
 
 
 def get_text(dataset_name, dataset_type, llm_name, tt_type, i, n_models=10):
-    if tt_type == "Tree Texts":
+    if tt_type == "Tree Texts 4":
         with open(os.getcwd() + f'/tree-texts/{dataset_name}_{dataset_type}_{n_models}_tts_4.pkl', 'rb') as f:
-            tree_texts_4 = pickle.load(f)
+            tree_texts = pickle.load(f)
+    elif tt_type == "Tree Texts 3":
+        with open(os.getcwd() + f'/tree-texts/{dataset_name}_{dataset_type}_{n_models}_tts_3.pkl', 'rb') as f:
+            tree_texts = pickle.load(f)
     elif tt_type == "Encoded Tree Texts":
         with open(os.getcwd() + f'/encoded-texts/{dataset_name}_{dataset_type}_{llm_name}_{n_models}_etts_4.pkl', 'rb') as f:
-            tree_texts_4 = pickle.load(f)
+            tree_texts = pickle.load(f)
     elif tt_type == "Decoded Tree Texts":
         with open(os.getcwd() + f'/decoded-texts/{dataset_name}_{dataset_type}_{llm_name}_{n_models}_dtts_3.pkl', 'rb') as f:
-            tree_texts_4 = pickle.load(f)
+            tree_texts = pickle.load(f)
     elif tt_type == "Validated Tree Texts":
         with open(os.getcwd() + f'/validated-texts/{dataset_name}_{dataset_type}_{llm_name}_{n_models}_vtts_3.pkl', 'rb') as f:
-            tree_texts_4 = pickle.load(f)
-    return list(tree_texts_4)[i]
+            tree_texts = pickle.load(f)
+    return list(tree_texts)[i]
 
 
 with gr.Blocks() as app:
@@ -555,38 +563,42 @@ with gr.Blocks() as app:
         with gr.Row():
             with gr.Column():
                 gr.Markdown("### Tree Text 1")
-                tt_type = gr.Radio(label="Select Type", choices=["Tree Texts", "Encoded Tree Texts", "Decoded Tree Texts", "Validated Tree Texts"], value="Tree Texts", interactive=True)
+                tt_type = gr.Radio(label="Select Type", choices=["Tree Texts 4", "Tree Texts 3", "Encoded Tree Texts", "Decoded Tree Texts", "Validated Tree Texts"], value="Tree Texts 4", interactive=True)
                 dataset_name = gr.Radio(label="Select Dataset", choices=dataset_names, value="cic-iot-2023", interactive=True)
                 dataset_type = gr.Radio(label="Select Type", choices=dataset_types, value="population", interactive=False)
                 llm_name = gr.Radio(label="Select LLM", choices=llm_names, value=llm_names[0], interactive=True)
                 i = gr.Radio(label="Select Index", choices=list(range(10)), value=0, interactive=True)
                 output_text = gr.Textbox(label="Output", interactive=False, lines=10)
 
-                tt_type.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
-                dataset_name.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
-                dataset_type.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
-                llm_name.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
-                i.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
-                app.load(fn=get_text, inputs=[dataset_name, dataset_type, llm_name, tt_type, i], outputs=output_text)
+                
             
             with gr.Column():
                 gr.Markdown("### Tree Text 2")
-                tt_type = gr.Radio(label="Select Type", choices=["Tree Texts", "Encoded Tree Texts", "Decoded Tree Texts", "Validated Tree Texts"], value="Tree Texts", interactive=True)
-                dataset_name = gr.Radio(label="Select Dataset", choices=dataset_names, value="cic-iot-2023", interactive=True)
-                dataset_type = gr.Radio(label="Select Type", choices=dataset_types, value="population", interactive=False)
-                llm_name = gr.Radio(label="Select LLM", choices=llm_names, value=llm_names[0], interactive=True)
-                i = gr.Radio(label="Select Index", choices=list(range(10)), value=0, interactive=True)
-                output_text = gr.Textbox(label="Output", interactive=False, lines=10)
+                tt_type2 = gr.Radio(label="Select Type", choices=["Tree Texts 4", "Tree Texts 3", "Encoded Tree Texts", "Decoded Tree Texts", "Validated Tree Texts"], value="Tree Texts 4", interactive=True)
+                dataset_name2 = gr.Radio(label="Select Dataset", choices=dataset_names, value="cic-iot-2023", interactive=True)
+                dataset_type2 = gr.Radio(label="Select Type", choices=dataset_types, value="population", interactive=False)
+                llm_name2 = gr.Radio(label="Select LLM", choices=llm_names, value=llm_names[0], interactive=True)
+                i2 = gr.Radio(label="Select Index", choices=list(range(10)), value=0, interactive=True)
+                output_text2 = gr.Textbox(label="Output", interactive=False, lines=10)
+            
+            tt_type.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
+            dataset_name.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
+            dataset_type.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
+            llm_name.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
+            i.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
+            i.change(fn=lambda x: x, inputs=[i], outputs=[i2])
+            app.load(fn=get_text, inputs=[dataset_name, dataset_type, llm_name, tt_type, i], outputs=output_text)
 
-                tt_type.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
-                dataset_name.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
-                dataset_type.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
-                llm_name.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
-                i.change(get_text, [dataset_name, dataset_type, llm_name, tt_type, i], output_text)
-                app.load(fn=get_text, inputs=[dataset_name, dataset_type, llm_name, tt_type, i], outputs=output_text)
+            tt_type2.change(get_text, [dataset_name2, dataset_type2, llm_name2, tt_type2, i2], output_text2)
+            dataset_name2.change(get_text, [dataset_name2, dataset_type2, llm_name2, tt_type2, i2], output_text2)
+            dataset_type2.change(get_text, [dataset_name2, dataset_type2, llm_name2, tt_type2, i2], output_text2)
+            llm_name2.change(get_text, [dataset_name2, dataset_type2, llm_name2, tt_type2, i2], output_text2)
+            i2.change(fn=lambda x: x, inputs=[i2], outputs=[i])
+            i2.change(get_text, [dataset_name2, dataset_type2, llm_name2, tt_type2, i2], output_text2)
+            app.load(fn=get_text, inputs=[dataset_name2, dataset_type2, llm_name2, tt_type2, i2], outputs=output_text2)
 
     with gr.Tab("Charts"):
-        gr.Markdown("### F1-Score vs LLM for each Dataset")
+        gr.Markdown("### Variation in F1-Score")
         with gr.Row():
             with gr.Column():
                 gr.Image("charts/aaa-cic-iot-2023_bar_chart_f1.png", label="cic-iot-2023")
@@ -600,24 +612,24 @@ with gr.Blocks() as app:
         gr.Markdown("### Variation in False Positive Rate")
         with gr.Row():
             with gr.Column():
-                gr.Plot()
+                gr.Image("charts/aaa-cic-iot-2023_dumbbell_chart_fpr.png", label="cic-iot-2023")
             with gr.Column():
-                gr.Plot()
+                gr.Image("charts/aaa-wustl-iiot_dumbbell_chart_fpr.png", label="wustl-iiot")
             with gr.Column():
-                gr.Plot()
+                gr.Image("charts/aaa-ton-iot_dumbbell_chart_fpr.png", label="ton-iot")
             with gr.Column():
-                gr.Plot()
+                gr.Image("charts/aaa-bot-iot_dumbbell_chart_fpr.png", label="bot-iot")
 
         gr.Markdown("### Variation in Data Volume")
         with gr.Row():
             with gr.Column():
-                gr.Plot()
+                gr.Image("charts/aaa-cic-iot-2023_bar_chart_compression.png", label="cic-iot-2023")
             with gr.Column():
-                gr.Plot()
+                gr.Image("charts/aaa-wustl-iiot_bar_chart_compression.png", label="wustl-iiot")
             with gr.Column():
-                gr.Plot()
+                gr.Image("charts/aaa-ton-iot_bar_chart_compression.png", label="ton-iot")
             with gr.Column():
-                gr.Plot()
+                gr.Image("charts/aaa-bot-iot_bar_chart_compression.png", label="bot-iot")
 
         gr.Markdown("### Knowledge Distillation Loss")
         with gr.Row():
@@ -629,5 +641,6 @@ with gr.Blocks() as app:
                 gr.Plot()
             with gr.Column():
                 gr.Plot()
+
 
 app.launch()
